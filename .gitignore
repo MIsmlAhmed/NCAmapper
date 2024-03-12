@@ -1,0 +1,8 @@
+## ignore the following files and directories
+*/*
+
+# except
+!LICENSE
+!README.md
+!NCAmapper_script/main_NCAmapper*
+

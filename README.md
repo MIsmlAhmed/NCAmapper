@@ -1,2 +1,3 @@
 # NCAmapper
-A repo for the Non-Contributing Area Mapper model
+A GIS model to map the spatial changes of the Non-Contributing Areas.
+
