@@ -1,27 +1,13 @@
-# V02 : (130 sec)
-# V03: Attempt to convert to terra and data.table, but the code is very slow compared to raster and df
-# v04: Faster processing by using data.table and which functions for indexing (70 sec)
-# V05: Remove depressions with zero depth & try to remove depressions on the mainstem (26 sec)
-# V06: Vectorizing the code (remove for loops) (10 sec)
-# V07: storing the indexes in lists, but this seems to be working slow compared to V06
-# V08: remove depressions on the main rivers identified from the NHN dataset
-# V09: tidy up the code and make a function for the hydrological component
-##########
-# main_NCAmapper 
-# v01: make everything into function calls
-# v02: create variable/fixed buffer of stream network, burn streams into DEM
-# v03: fix a bug in identifying the next DS depression. Next DS depression should be selected from neighbors
-# based on the D8 pointer flow direction to exactly match how watershed function works
-# v04: read rain depths and return periods from file. Compress Rasters. divide output to temp and final output
-# v05: convert from raster to terra for faster processing (was 5 seconds faster, but slightly different results)
-# v60: revert back to v04 and try to optimize the code further
+# Functions used by the NCAmapper model (main_NCAmapper)
 ############################
 ###########################
-# clear envirnment variables
-cat("\014") 
-rm(list = ls())
 init_NCAmapper_config <- function(inp_dir){
   
+  # Print the model credits to the screen
+  cat('Non-Contributing Area mapping tool \n')
+  cat('NCAmapper (v 1.10) \n')
+  cat('© Mohamed Ismaiel Ahmed 2024 @ UCalgary \n')
+  cat('Initializing NCAmapper \n')
   # set seed number
   set.seed(123456788)
   # read config file and save to list
@@ -51,6 +37,16 @@ init_NCAmapper_config <- function(inp_dir){
   # add the inp_dir to the list
   key_value_map$inp_dir <- inp_dir
   
+  
+  # install missing packages
+  # list of dependecies (packages) for the NCAmapper modelexcept whitebox as it needs special treatment
+  packages_dependencies <- c('data.table', 'raster', 'sf', 'terra', 'viridis')
+  # missing packages (needs to be installed)
+  new.packages <- packages_dependencies[!(packages_dependencies %in% installed.packages()[,"Package"])]
+  # install the missing packages
+  if(length(new.packages)) install.packages(new.packages)
+  
+  
   #load the required libraries
   if (!require(whitebox)){
     install.packages("whitebox")
@@ -76,19 +72,6 @@ init_NCAmapper_config <- function(inp_dir){
   # Set ncores used by different packages
   wbt_max_procs(max_procs = key_value_map$ncores)
   setDTthreads(threads = key_value_map$ncores)
-  
-  # if (rstudioapi::isAvailable()) {
-  #   if (require('rstudioapi') != TRUE) {
-  #     install.packages('rstudioapi')
-  # 
-  #   } else{
-  #     library(rstudioapi) # load it
-  #   }
-  #   wdir <- dirname(getActiveDocumentContext()$path)
-  # } else{
-  #   wdir <- getwd()
-  # }
-  # setwd(wdir)
   
   # create output directories
   dir.create(paste0(key_value_map$inp_dir, '/', key_value_map$temp_dir))
@@ -799,23 +782,3 @@ simulate_depStorage_NCA <- function(config_file, dep_smr){
   # })
 }
 #####################################################
-
-# main code #
-##########################################
-# Specify inputs
-inp_dir <- '/Users/mohamed/Documents/scratch/Souris'
-# read config file and initialize NCAmapper
-config_file <- init_NCAmapper_config(inp_dir)
-##########################################
-
-#preprocess the data using Whiteboxtools
-preprocessing_wbt(config_file)
-####################
-#get summary of depressions
-dep_smr <- get_depressions_summary(config_file)
-# dep_smr <- read.csv(paste0(config_file$inp_dir,'/', config_file$out_dir, '/depressions_summary.csv'))
-####################
-# Start the depressional storage & NCA component
-depression_state <- simulate_depStorage_NCA(config_file, dep_smr)
-
-# toc()
