@@ -65,6 +65,7 @@ init_NCAmapper_config <- function(inp_dir){
   require('data.table') #faster processing of dataframes
   require('raster') #working with raster objects
   require('sf') #working with shapefiles
+  require('terra') #faster cropping and raster operations
   # libraries required for plotting
   # require("ggnewscale")# use multiple scales
   # require('ggplot2')
@@ -151,15 +152,21 @@ preprocessing_wbt <- function(config_file){
   
   # re-project the shp file to the same crs as the raster
   main_river_poly <- st_transform(main_river_poly, crs = st_crs(dep_no_r))
+  # slow
   # write the re-projected shapefile
-  if(file.exists(paste0(temp_dir,'/main_river_poly.shp'))){unlink(paste0(temp_dir,'/main_river_poly.*'))}
-  shapefile(as(main_river_poly, "Spatial"), filename = paste0(temp_dir,'/main_river_poly.shp')) # doesn't support overwrite
-  #clip the raster to the polygon using WBT (faster than the sf package)
-  wbt_clip_raster_to_polygon(input = paste0(temp_dir,'/depression_no.tif'), wd = temp_dir, polygons = paste0(temp_dir,'/main_river_poly.shp'),
-                             output = paste0(temp_dir,'/depression_no_rvr.tif'), verbose_mode = F)
-  # read the cropped raster that contains the depressions within the river
-  dep_no_rvr_r <- raster(paste0(temp_dir,'/depression_no_rvr.tif'))
-
+  # if(file.exists(paste0(temp_dir,'/main_river_poly.shp'))){unlink(paste0(temp_dir,'/main_river_poly.*'))}
+  # shapefile(as(main_river_poly, "Spatial"), filename = paste0(temp_dir,'/main_river_poly.shp')) # doesn't support overwrite
+  # #clip the raster to the polygon using WBT (faster than the sf package)
+  # wbt_clip_raster_to_polygon(input = paste0(temp_dir,'/depression_no.tif'), wd = temp_dir, polygons = paste0(temp_dir,'/main_river_poly.shp'),
+  #                            output = paste0(temp_dir,'/depression_no_rvr.tif'), verbose_mode = F)
+  ## read the cropped raster that contains the depressions within the river
+  # dep_no_rvr_r <- raster(paste0(temp_dir,'/depression_no_rvr.tif'))
+  # mask raster directly in R using terra package (much faster)
+  dep_no_rvr_r <- terra::mask(rast(paste0(temp_dir,'/depression_no.tif')), main_river_poly) #mask(dep_no_r, main_river_poly)
+  #write the raster to file
+  writeRaster(dep_no_rvr_r, paste0(temp_dir,'/depression_no_rvr.tif'), overwrite=TRUE)
+  #convert it back to rasterlayer
+  dep_no_rvr_r <- raster(dep_no_rvr_r)
   #get dep_no and number of cells for each dep_no
   dep_rvr <- data.table(dep_no_rvr =getValues(dep_no_rvr_r))
   dep_rvr <- dep_rvr[, .(count = .N), by = dep_no_rvr]
@@ -233,7 +240,7 @@ preprocessing_wbt <- function(config_file){
   wbt_fill_depressions(dem = DEM_name, wd = temp_dir, output = paste0(temp_dir,'/filled_dem.tif'),verbose_mode = F)
   # #burn streams into DEM not working 
   # wbt_fill_burn(dem = DEM_name, streams = rvr_data, output = paste0(temp_dir,'/filled_dem_stream_burn.tif'), wd = temp_dir, verbose_mode = F)
-  #generate d8 pointer based on the filled and burned DEM
+  #generate d8 pointer based on the filled DEM
   wbt_d8_pointer(wd = temp_dir, dem = paste0(temp_dir,'/filled_dem.tif'), output = paste0(temp_dir,'/D8_flow_pointer_filled.tif'), verbose_mode = F)
   #get location of max flow accumulation (possible outlet)
   wbt_d8_flow_accumulation(input = paste0(temp_dir,'/filled_dem.tif'), wd = temp_dir, output = paste0(temp_dir,'/flow_acc_fill.tif'),verbose_mode = F)
@@ -742,12 +749,12 @@ simulate_depStorage_NCA <- function(config_file, dep_smr){
                 paste0(out_dir,'/depr_stor_dep_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
                 overwrite=T,options=c('COMPRESS=DEFLATE', 'PREDICTOR=2', 'ZLEVEL=9', paste0("NUM_THREADS=",config_file$ncores)))
     writeRaster(nonfilled_dep_ras,
-                paste0(temp_dir,'/3-nonfil_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
+                paste0(temp_dir,'/3-nonfill_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
                 overwrite=T,options=c("COMPRESS=NONE", paste0("NUM_THREADS=",config_file$ncores)))
     
     #delineate watesheds based on the new depressions (calc NCA)
     wbt_watershed(wd = temp_dir, d8_pntr = paste0(temp_dir,'/D8_flow_pointer_filled.tif'),
-                  pour_pts = paste0(temp_dir,'/3-nonfil_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
+                  pour_pts = paste0(temp_dir,'/3-nonfill_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
                   output = paste0(temp_dir,'/watershed_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),verbose_mode = F)
     #quantify the contributing area (cell have 'tot_ndep+1e6' value in the watershed file)
     NCA_ras <- raster(paste0(temp_dir,'/watershed_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'))
@@ -796,7 +803,7 @@ simulate_depStorage_NCA <- function(config_file, dep_smr){
 # main code #
 ##########################################
 # Specify inputs
-inp_dir <- '/Users/mohamed/Documents/Work/Prairie_algorithm/NCAmapper/runs/SCRB'
+inp_dir <- '/Users/mohamed/Documents/scratch/Souris'
 # read config file and initialize NCAmapper
 config_file <- init_NCAmapper_config(inp_dir)
 ##########################################

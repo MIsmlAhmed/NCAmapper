@@ -1,7 +1,0 @@
-Steps
-
-1. Get DEM from COP30m data
-2. delineate the watershed and define the boundary to clip the DEM to the basin area only.
-3. Identify major rivers using the global river width data
-4. remove rivers that are not actual rivers (from satellite imageries) in the basin and that are not connected to the main stem. Some unconnected rivers were left as they represent major (artificial lake) that are to be removed from the analysis to simulate the natural conditions.
-5. apply a fixed buffer of xx to remove some artificial depressions (not seen from imageries) around river banks
