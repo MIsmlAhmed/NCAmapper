@@ -12,7 +12,7 @@ rm(list = ls())
 source("functions_NCAmapper.R")
 # main code #
 ##########################################
-# Specify inputs
+# Specify inputs (location where NCAmapper_config.ini and other inputs are located)
 inp_dir <- '/Users/mohamed/Documents/scratch/SCRB'
 # read config file and initialize NCAmapper
 config_file <- init_NCAmapper_config(inp_dir)

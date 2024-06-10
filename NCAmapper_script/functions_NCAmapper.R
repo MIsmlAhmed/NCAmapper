@@ -732,12 +732,12 @@ simulate_depStorage_NCA <- function(config_file, dep_smr){
                 paste0(out_dir,'/depr_stor_dep_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
                 overwrite=T,options=c('COMPRESS=DEFLATE', 'PREDICTOR=2', 'ZLEVEL=9', paste0("NUM_THREADS=",config_file$ncores)))
     writeRaster(nonfilled_dep_ras,
-                paste0(temp_dir,'/3-nonfill_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
+                paste0(temp_dir,'/nonfill_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
                 overwrite=T,options=c("COMPRESS=NONE", paste0("NUM_THREADS=",config_file$ncores)))
     
     #delineate watesheds based on the new depressions (calc NCA)
     wbt_watershed(wd = temp_dir, d8_pntr = paste0(temp_dir,'/D8_flow_pointer_filled.tif'),
-                  pour_pts = paste0(temp_dir,'/3-nonfill_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
+                  pour_pts = paste0(temp_dir,'/nonfill_depressions_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),
                   output = paste0(temp_dir,'/watershed_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'),verbose_mode = F)
     #quantify the contributing area (cell have 'tot_ndep+1e6' value in the watershed file)
     NCA_ras <- raster(paste0(temp_dir,'/watershed_',itime,'_',return_period[itime],'yr_',sprintf("%.3f",inc_depth[itime]*1000),'_mm','.tif'))

@@ -5,6 +5,9 @@
 !LICENSE
 !README.md
 !figures/logo.png
+!figures/issues/
+figures/issues/*.pptx
+figures/issues/*.pdf
 !NCAmapper_script/main_NCAmapper.R
 !NCAmapper_script/functions_NCAmapper.R
 
