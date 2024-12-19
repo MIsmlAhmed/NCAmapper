@@ -5,7 +5,7 @@
 # A copy of this script can be found on GitHub at https://github.com/MIsmlAhmed/NCAmapper
 
 # NCAmapper main script
-# clear envirnment variables
+# clear environment variables
 cat("\014") 
 rm(list = ls())
 # load NCAmapper functiond

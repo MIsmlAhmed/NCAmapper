@@ -10,4 +10,4 @@ figures/issues/*.pptx
 figures/issues/*.pdf
 !NCAmapper_script/main_NCAmapper.R
 !NCAmapper_script/functions_NCAmapper.R
-
+!export_NCAmapper2HDS/NCAmapper2HDS.R
