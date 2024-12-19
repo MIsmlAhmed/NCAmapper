@@ -12,9 +12,11 @@ The North American prairie region is characterized by numerous land depressions 
 ____________
 ## Repo structure
 
-This repo contains the NCAmapper script/model.
+This repo contains the NCAmapper script/model `NCAmapper_script` to map NCAs and spatial water extents.
 * main_NCAmapper.R: the main file to run the NCAmapper model. It needs the input directory (inp_dir), which is the working directory that contains the inputs and it is the same directory where outputs will be written.
 * functions_NCAmapper.R: a script that contains the used functions/modules by NCAmapper.
+
+The `export_NCAmapper2HDS` directory contains an R script to convert NCAmapper outputs (specifically after the pre-processing step of NCAmapper) to HDS equivalent parameters.
 
 Sample input files for the models are included in the following [Zenodo repository](https://zenodo.org/records/11043366)
 
